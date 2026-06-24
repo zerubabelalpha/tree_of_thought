@@ -23,7 +23,7 @@ class LLMClient:
             api_key=self.api_key,
         )
 
-    def complete(self, prompt: str, system_prompt: str = None, temperature: float = 0.7, max_tokens: int = 3000) -> str:
+    def complete(self, prompt: str, system_prompt: str = None, temperature: float = 0.7, max_tokens: int = 10000) -> str:
         #Sends a query to OpenRouter via the OpenAI SDK and returns the text response.
         
         messages = []   

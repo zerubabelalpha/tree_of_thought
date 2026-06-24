@@ -114,7 +114,7 @@ class TreeOfThoughts:
             status_log.append(msg)
             return "\n".join(status_log)
 
-        yield log(f"### 🔍 Starting Tree of Thoughts Research\n* **Query**: `{query}`\n* **Depth**: `{max_depth}` | **Branching Factor**: `{branching_factor}` | **Score Threshold**: `{score_threshold}`\n\nInitializing search..."), ""
+        yield log(f"Starting Tree of Thoughts Research\n* **Query**: `{query}`\n* **Depth**: `{max_depth}` | **Branching Factor**: `{branching_factor}` | **Score Threshold**: `{score_threshold}`\n\nInitializing search..."), ""
 
         # Step 0: Create Root Node
         root_id = self._generate_id()
@@ -128,12 +128,12 @@ class TreeOfThoughts:
         root_node.status = "selected"
         self.nodes[root_id] = root_node
         
-        yield log("✅ Root node initialized. Beginning Layer 1..."), ""
+        yield log("Root node initialized. Beginning Layer 1..."), ""
 
         # -------------------------------------------------------------
         # LAYER 1: Generate Research Directions & Query arXiv
         # -------------------------------------------------------------
-        yield log("\n### 📂 Layer 1: Proposing Research Directions"), ""
+        yield log("\nLayer 1: Proposing Research Directions"), ""
         
         l1_prompt = L1_PROMPT_TEMPLATE.format(query=query, branching_factor=branching_factor)
 
@@ -143,7 +143,7 @@ class TreeOfThoughts:
             if not isinstance(proposed_directions, list):
                 raise ValueError("Expected a list of research directions.")
         except Exception as e:
-            yield log(f"⚠️ Warning: Thought generation failed: {e}. Applying fallback directions..."), ""
+            yield log(f"Warning: Thought generation failed: {e}. Applying fallback directions..."), ""
             # Fallback directions based on query keywords
             keywords = " ".join(query.split()[:4])
             proposed_directions = [
@@ -167,17 +167,17 @@ class TreeOfThoughts:
             self.nodes[node_id] = node
             l1_nodes.append(node)
             
-            yield log(f"👉 Generated thought branch: *\"{thought_text}\"* (arXiv query: `{arxiv_q}`)"), ""
+            yield log(f"Generated thought branch: *\"{thought_text}\"* (arXiv query: `{arxiv_q}`)"), ""
 
         # Fetch papers & Evaluate Layer 1
-        yield log("\n### 📚 Fetching literature from arXiv and evaluating paths..."), ""
+        yield log("\n###Fetching literature from arXiv and evaluating paths..."), ""
         
         for node in l1_nodes:
-            yield log(f"🔍 Searching arXiv for: `{node.arxiv_query}`..."), ""
+            yield log(f"Searching arXiv for: `{node.arxiv_query}`..."), ""
             papers = self.arxiv.search(node.arxiv_query, max_results=3)
             node.papers = papers
             
-            yield log(f"   📥 Found {len(papers)} papers. Scoring branch..."), ""
+            yield log(f"Found {len(papers)} papers. Scoring branch..."), ""
             
             # Format papers for the prompt
             papers_summary = ""
@@ -199,11 +199,11 @@ class TreeOfThoughts:
                 node.score = float(eval_data.get("score", 5.0))
                 node.rationale = eval_data.get("rationale", "No rationale provided.")
             except Exception as e:
-                yield log(f"   ⚠️ Evaluation parsing error: {e}. Using fallback score."), ""
+                yield log(f"Evaluation parsing error: {e}. Using fallback score."), ""
                 node.score = 5.0 if papers else 2.0
                 node.rationale = "Fallback score based on papers presence."
 
-            yield log(f"   ⭐ Score: **{node.score}/10** | *{node.rationale}*"), ""
+            yield log(f"Score: **{node.score}/10** | *{node.rationale}*"), ""
 
         # Filter & Select Layer 1
         l1_nodes.sort(key=lambda n: n.score, reverse=True)
@@ -213,33 +213,33 @@ class TreeOfThoughts:
             if node.score >= score_threshold and len(selected_l1_nodes) < max(2, branching_factor // 2 + 1):
                 node.status = "selected"
                 selected_l1_nodes.append(node)
-                yield log(f"🟢 **Selected**: Branch `{node.node_id}` (*Score: {node.score}*)"), ""
+                yield log(f"**Selected**: Branch `{node.node_id}` (*Score: {node.score}*)"), ""
             else:
                 node.status = "discarded"
-                yield log(f"🔴 **Discarded**: Branch `{node.node_id}` (*Score: {node.score}*)"), ""
+                yield log(f"**Discarded**: Branch `{node.node_id}` (*Score: {node.score}*)"), ""
 
         if not selected_l1_nodes:
-            yield log("⚠️ No branches met the score threshold. Continuing with the highest scoring branch to avoid complete failure..."), ""
+            yield log("No branches met the score threshold. Continuing with the highest scoring branch to avoid complete failure..."), ""
             if l1_nodes:
                 l1_nodes[0].status = "selected"
                 selected_l1_nodes.append(l1_nodes[0])
-                yield log(f"🟢 **Forced Selection**: Branch `{l1_nodes[0].node_id}` (*Score: {l1_nodes[0].score}*)"), ""
+                yield log(f"**Forced Selection**: Branch `{l1_nodes[0].node_id}` (*Score: {l1_nodes[0].score}*)"), ""
             else:
-                yield log("❌ Critical error: No branches available at all."), ""
+                yield log("Critical error: No branches available at all."), ""
                 return
 
         # If max_depth is 1, we skip layer 2 and jump directly to synthesis
         if max_depth < 2:
-            yield log("\n⏭️ Max depth reached. Proceeding to final report synthesis..."), ""
+            yield log("\nMax depth reached. Proceeding to final report synthesis..."), ""
         else:
             # -------------------------------------------------------------
             # LAYER 2: Deep Analysis & Critique
             # -------------------------------------------------------------
-            yield log("\n### 📝 Layer 2: Deep Literature Analysis & Critique"), ""
+            yield log("\n###Layer 2: Deep Literature Analysis & Critique"), ""
             
             l2_nodes = []
             for l1_node in selected_l1_nodes:
-                yield log(f"⚙️ Synthesizing literature analysis for: *\"{l1_node.thought}\"*..."), ""
+                yield log(f"Synthesizing literature analysis for: *\"{l1_node.thought}\"*..."), ""
                 
                 # Format papers details
                 papers_details = ""
@@ -255,7 +255,7 @@ class TreeOfThoughts:
                 try:
                     analysis_text = self.llm.complete(analysis_prompt, system_prompt="You are an objective scientific analyst.", temperature=0.4)
                 except Exception as e:
-                    yield log(f"⚠️ Analysis generation failed: {e}. Using fallback summary."), ""
+                    yield log(f"Analysis generation failed: {e}. Using fallback summary."), ""
                     analysis_text = f"Fallback summary of papers for research direction: {l1_node.thought}."
                 
                 # Create Layer 2 node
@@ -273,7 +273,7 @@ class TreeOfThoughts:
                 l2_nodes.append(l2_node)
                 
                 # Evaluate Layer 2 Analysis
-                yield log(f"   ⭐ Evaluating analysis depth..."), ""
+                yield log(f"Evaluating analysis depth..."), ""
                 
                 eval_l2_prompt = EVAL_L2_PROMPT_TEMPLATE.format(
                     query=query,
@@ -286,11 +286,11 @@ class TreeOfThoughts:
                     l2_node.score = float(eval_l2_data.get("score", 5.0))
                     l2_node.rationale = eval_l2_data.get("rationale", "No rationale provided.")
                 except Exception as e:
-                    yield log(f"   ⚠️ L2 evaluation parsing error: {e}. Using fallback score."), ""
+                    yield log(f"L2 evaluation parsing error: {e}. Using fallback score."), ""
                     l2_node.score = 5.0
                     l2_node.rationale = "Fallback score based on default analysis."
 
-                yield log(f"   ⭐ L2 Analysis Score: **{l2_node.score}/10** | *{l2_node.rationale}*"), ""
+                yield log(f"L2 Analysis Score: **{l2_node.score}/10** | *{l2_node.rationale}*"), ""
 
             # Filter & Select Layer 2
             l2_nodes.sort(key=lambda n: n.score, reverse=True)
@@ -301,22 +301,22 @@ class TreeOfThoughts:
                     node.status = "selected"
                     selected_l2_nodes.append(node)
                     # Mark parent as also selected (should already be selected)
-                    yield log(f"🟢 **Selected**: L2 Analysis `{node.node_id}` (*Score: {node.score}*)"), ""
+                    yield log(f"**Selected**: L2 Analysis `{node.node_id}` (*Score: {node.score}*)"), ""
                 else:
                     node.status = "discarded"
-                    yield log(f"🔴 **Discarded**: L2 Analysis `{node.node_id}` (*Score: {node.score}*)"), ""
+                    yield log(f"**Discarded**: L2 Analysis `{node.node_id}` (*Score: {node.score}*)"), ""
 
             if not selected_l2_nodes:
-                yield log("⚠️ No L2 analyses met the score threshold. Continuing with the highest scoring analysis to avoid failure..."), ""
+                yield log("No L2 analyses met the score threshold. Continuing with the highest scoring analysis to avoid failure..."), ""
                 if l2_nodes:
                     l2_nodes[0].status = "selected"
                     selected_l2_nodes.append(l2_nodes[0])
-                    yield log(f"🟢 **Forced Selection**: L2 Analysis `{l2_nodes[0].node_id}` (*Score: {l2_nodes[0].score}*)"), ""
+                    yield log(f"**Forced Selection**: L2 Analysis `{l2_nodes[0].node_id}` (*Score: {l2_nodes[0].score}*)"), ""
 
         # -------------------------------------------------------------
         # LAYER 3: Synthesis & Final Report
         # -------------------------------------------------------------
-        yield log("\n### 🎓 Layer 3: Synthesizing Final Research Report"), ""
+        yield log("\nLayer 3: Synthesizing Final Research Report"), ""
         
         # Build successful paths representation
         successful_paths_summary = ""
@@ -344,7 +344,7 @@ class TreeOfThoughts:
             successful_paths_summary=successful_paths_summary
         )
 
-        yield log("✍️ Drafting final report with unified literature synthesis..."), ""
+        yield log("Drafting final report with unified literature synthesis..."), ""
         
         try:
             final_report = self.llm.complete(final_prompt, system_prompt="You are a professional academic writer.", temperature=0.5)
@@ -354,7 +354,7 @@ class TreeOfThoughts:
         # Save search tree to file
         self._save_tree_to_file()
         
-        yield log("🎉 **Deep Research Complete!** Report generated successfully and tree log saved to `research_tree.json`."), final_report
+        yield log("**Deep Research Complete!** Report generated successfully and tree log saved to `research_tree.json`."), final_report
 
     def _save_tree_to_file(self):
         """Saves the complete tree structure to a JSON file in the background."""

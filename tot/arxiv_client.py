@@ -36,7 +36,7 @@ class ArxivClient:
     def __init__(self):
         self.base_url = "http://export.arxiv.org/api/query"
 
-    def search(self, query: str, max_results: int = 5) -> list:
+    def search(self, query: str, max_results: int = 10) -> list:
         """
         Queries arXiv with a search string and parses the response.
         
@@ -49,8 +49,9 @@ class ArxivClient:
         """
         # Ensure query is clean and urlencoded. Search in all fields ('all:').
         # Using double quotes in the arXiv search string ensures exact phrase matches where needed.
-        safe_query = urllib.parse.quote(f'all:"{query}"')
+        safe_query = urllib.parse.quote(f"all:'{query}'")
         url = f"{self.base_url}?search_query={safe_query}&max_results={max_results}"
+        print(url)
         
         try:
             # Short timeout to keep queries snappy
@@ -61,7 +62,7 @@ class ArxivClient:
             print(f"Error querying arXiv API: {e}")
             # Try a fallback query without exact phrase quotes in case it failed
             try:
-                fallback_query = urllib.parse.quote(f"all:{query}")
+                fallback_query = urllib.parse.quote(f'all:{query}')
                 fallback_url = f"{self.base_url}?search_query={fallback_query}&max_results={max_results}"
                 response = requests.get(fallback_url, timeout=35)
                 response.raise_for_status()
